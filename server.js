@@ -1,22 +1,11 @@
 import { ApolloServer, gql } from "apollo-server"
 
-let fakeDatabase = [
-    {
-        id:"1",
-        text:"first Tweet"
-    },
-    {
-        id:"2",
-        text:"second Tweet"
-    }
-]
-
 const typeDefs = gql`
     type User{
         id: ID!
-        username: String!
         firstName: String!
-        lastName: String
+        lastName: String!
+        fullName: String!
     }
     type Tweet{
         id: ID!
@@ -25,6 +14,7 @@ const typeDefs = gql`
     }
     type Query {
         allTweets: [Tweet!]!
+        allUsers:[User!]!
         tweet(id: ID!): Tweet
         ping: String!
     }    
@@ -53,17 +43,53 @@ const resolvers1 = {
         }
     }
 }
+let tweetDatabase = [
+    {
+        id:"1",
+        text:"first Tweet"
+    },
+    {
+        id:"2",
+        text:"second Tweet"
+    }
+]
+let userDatabase = [
+    {
+        id:"1",
+        firstName:"nico",
+        lastName:"las",
+    },
+    {
+        id:"2",
+        firstName:"hw",
+        lastName:"b",
+    },
+]
 let count = 0
 const resolvers = {
     Query:{
         allTweets(){
-            return fakeDatabase
+            return tweetDatabase
+        },
+        allUsers(){
+            console.log("allUsers' resolver is called")
+            return userDatabase
+            //이 userDatabase에 query에서는 id, firstName, lastName, fullName을 요청했지만
+            //fullName의 값이 null이면 resolver가 있는지 찾으러 간다.
         },
         tweet(root, argument){
             const id = argument.id
             console.log(argument, id)
-            return fakeDatabase.find((tweet)=>tweet.id === id)
+            return tweetDatabase.find((tweet)=>tweet.id === id)
             //자바스크립트 배열 find 함수
+        },
+    },
+    User:{
+        fullName(root,argument){
+            console.log("fullName's resolver is called")
+            console.log(root)
+            //fullName resolver를 호출한 User query가 root로 전달된다.
+            return `${root.firstName} ${root.lastName}`
         }
     },
     Mutation:{
@@ -71,25 +97,26 @@ const resolvers = {
             const id = argument.id
             const text = argument.text
             const newTweet = {
-                id: fakeDatabase.length+1,
+                id: tweetDatabase.length+1,
                 text:text
             }
             count = count+1
-            fakeDatabase.push(newTweet)
-            return fakeDatabase[count]
+            tweetDatabase.push(newTweet)
+            return tweetDatabase[count]
         },
         deleteTweet(_,argument){
             const id = argument.id
-            const tweet = fakeDatabase.find(tweet => tweet.id === id)
+            const tweet = tweetDatabase.find(tweet => tweet.id === id)
             if(!tweet) return false
-            fakeDatabase= fakeDatabase.filter(tweet => tweet.id!==id)
+            tweetDatabase= tweetDatabase.filter(tweet => tweet.id!==id)
             //자바스크립트 배열 filter 함수
             return true
-        }
-    }
+        },
+    },
 }
 //이렇게 Query와 Mutation으로 나누는 이유는 그냥 코딩하기 편하려고.
-//구분을 지어줌으로써 개발자가 무언가 수정하는건 Mutation에서 찾고, 검색하는 건 Query에서 찾고
+//구분을 지어줌으로써 개발자가 database를 mutate하는 기능은 Mutation에 넣고, database에서 fetching하는 기능은 Query에서 찾고.
+//따라서 Mutation에 있는 postTweet, deleteTweet을 Query에 넣어도 아무 문제 없음. 진짜 그냥 개발하는데 편하려고 구분을 해두는 것.
 
 const server = new ApolloServer({typeDefs, resolvers})
 //resolvers 자리에 다른 이름을 넣으면 오류가 난다. 왜 그럴까?
