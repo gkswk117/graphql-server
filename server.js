@@ -1,5 +1,16 @@
 import { ApolloServer, gql } from "apollo-server"
 
+const fakeDatabase = [
+    {
+        id:"1",
+        text:"first Tweet"
+    },
+    {
+        id:"2",
+        text:"second Tweet"
+    }
+]
+
 const typeDefs = gql`
     type User{
         id: ID!
@@ -10,11 +21,12 @@ const typeDefs = gql`
     type Tweet{
         id: ID!
         text: String!
-        author: User!
+        author: User
     }
     type Query {
         allTweets: [Tweet!]!
         tweet(id: ID!): Tweet
+        ping: String!
     }    
     type Mutation{
         postTweet(text: String!, userId: ID!): Tweet!
@@ -29,7 +41,34 @@ const typeDefs = gql`
 //Mutation type은 Post request url을 열어주는 것이다.
 //
 
-const server = new ApolloServer({typeDefs})
+// const resolvers = {
+//     Query:{
+//         tweet(){
+//             console.log("I'm called.")
+//             return null
+//         },
+//         ping(){
+//             console.log("ping is called.")
+//             return "pong"
+//         }
+//     }
+// }
+
+const resolvers = {
+    Query:{
+        allTweets(){
+            return fakeDatabase
+        },
+        tweet(root, argument){
+            const id = argument.id
+            console.log(argument, id)
+            return fakeDatabase.find((tweet)=>tweet.id === id)
+        }
+    }
+}
+
+const server = new ApolloServer({typeDefs, resolvers})
+//resolvers 자리에 다른 이름을 넣으면 오류가 난다. 왜 그럴까?
 
 server.listen().then(({url})=>{
     console.log(`Running on ${url}`)
