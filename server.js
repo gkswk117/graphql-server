@@ -5,6 +5,9 @@ const typeDefs = gql`
         id: ID!
         firstName: String!
         lastName: String!
+        """
+        fullName is the sum of firstName + lastName as a string.
+        """
         fullName: String!
     }
     type Tweet{
@@ -13,6 +16,9 @@ const typeDefs = gql`
         author: User
     }
     type Query {
+        """
+        This is how you write description about allTweets field.
+        """
         allTweets: [Tweet!]!
         allUsers:[User!]!
         tweet(id: ID!): Tweet
@@ -46,21 +52,23 @@ const resolvers1 = {
 let tweetDatabase = [
     {
         id:"1",
-        text:"first Tweet"
+        text:"first Tweet",
+        userID:"921009"
     },
     {
         id:"2",
-        text:"second Tweet"
+        text:"second Tweet",
+        userID:"891206"
     }
 ]
 let userDatabase = [
     {
-        id:"1",
+        id:"891206",
         firstName:"nico",
         lastName:"las",
     },
     {
-        id:"2",
+        id:"921009",
         firstName:"hw",
         lastName:"b",
     },
@@ -70,6 +78,8 @@ const resolvers = {
     Query:{
         allTweets(){
             return tweetDatabase
+            //return을 하는 tweetDatabase는 typeDefs에서 allTweets의 shape를 정의한 것과 동일한 shape이어야 한다.
+            //
         },
         allUsers(){
             console.log("allUsers' resolver is called")
@@ -84,21 +94,12 @@ const resolvers = {
             //자바스크립트 배열 find 함수
         },
     },
-    User:{
-        fullName(root,argument){
-            console.log("fullName's resolver is called")
-            console.log(root)
-            //fullName resolver를 호출한 User query가 root로 전달된다.
-            return `${root.firstName} ${root.lastName}`
-        }
-    },
     Mutation:{
         postTweet(_,argument){
-            const id = argument.id
-            const text = argument.text
-            const newTweet = {
+                const newTweet = {
                 id: tweetDatabase.length+1,
-                text:text
+                text:argument.text,
+                userId:argument.userID,
             }
             count = count+1
             tweetDatabase.push(newTweet)
@@ -113,6 +114,25 @@ const resolvers = {
             return true
         },
     },
+    User:{
+        firstName(root){
+            return root.firstName
+        },
+        fullName(root,argument){
+            console.log("fullName's resolver is called")
+            console.log(root)
+            //fullName resolver를 호출한 User query가 root로 전달된다.
+            return `${root.firstName} ${root.lastName}`
+        }
+    },
+    Tweet:{
+        author(root){
+            console.log(root)
+            //authoer resolver를 호출한 Tweet query가 root로 전달된다.
+            const userID = root.userID
+            return userDatabase.find((user)=>user.id === userID)
+        }
+    }
 }
 //이렇게 Query와 Mutation으로 나누는 이유는 그냥 코딩하기 편하려고.
 //구분을 지어줌으로써 개발자가 database를 mutate하는 기능은 Mutation에 넣고, database에서 fetching하는 기능은 Query에서 찾고.
