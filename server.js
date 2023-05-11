@@ -182,3 +182,5 @@ const server = new ApolloServer({typeDefs, resolvers})
 server.listen().then(({url})=>{
     console.log(`Running on ${url}`)
 })
+//listen() 안에 아무것도 주지 않으면 default로 4000포트에 연결함. url == http://localhost:4000/
+//내가 원하는 포트를 입력하면 됨.
